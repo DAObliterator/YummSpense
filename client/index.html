@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+   <meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' http://localhost:6016;"
+>
+
+
+   
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Audiowide&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <title>YummSpense</title>
+  </head>
+ 
+
+  <link rel="stylesheet" href="./index.css" />
+  <body>
+    <div id="Main" class="Main">
+      <h1  >A Small App That Displays Your Total Yummpies Expenditure</h1>
+      <table id="Expenditures-Table" >
+        <th>
+           
+                <td>Item</td>
+                <td>Price</td>
+                <td>Quantity</td>
+                <td>Total Price</td>
+            
+        </th>
+      </table>
+      <button id="Fetch-Data-Btn" >Fetch Data</button>
+    </div>
+     <script src="./index.js"></script>
+  </body>
+</html>
