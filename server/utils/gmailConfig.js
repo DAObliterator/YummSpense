@@ -3,6 +3,8 @@ const path = require("path");
 const process = require("process");
 const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
+const cheerio = require("cheerio");
+const { getRelevantInfoGeminiApi } = require("./geminiApiConfig.js");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
@@ -63,7 +65,7 @@ const authorize = async () => {
     await saveCredentials(client);
   }
   return client;
-}
+};
 
 /**
  * Lists the labels in the user's account.
@@ -71,20 +73,70 @@ const authorize = async () => {
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
 
-
-const listLabels = async () => {
-    const auth = await authorize();
+const listOrders = async () => {
+  const auth = await authorize();
   const gmail = google.gmail({ version: "v1", auth });
-  const res = await gmail.users.labels.list({
-    userId: "me",
-  });
-  const labels = res.data.labels;
-  if (!labels || labels.length === 0) {
-    console.log("No labels found.");
-    return;
+  let result;
+  
+  let arrayOfResults = [];
+  let decodedBody;
+  try {
+    let req = await gmail.users.messages.list({
+      userId: "me",
+      q: "from:<support@petpooja.com>",
+    });
+
+    let arr = req.data.messages;
+
+    let c = 0;
+
+    for (const m of arr) {
+      let resObj;
+      if (c > 2) {
+        break;
+      }
+
+      let message;
+
+      let currentId = m.id;
+
+      message = await gmail.users.messages.get({ userId: "me", id: currentId });
+
+      // Decode the body of the message
+      const encodedBody =
+        message.data.payload?.body?.data ||
+        message.data.payload?.parts?.[0]?.body?.data;
+
+      if (encodedBody) {
+        // Decode from Base64 and convert to string
+        decodedBody = Buffer.from(encodedBody, "base64").toString("utf-8");
+
+        const $ = cheerio.load(decodedBody);
+
+        const prompt = `extract order id items and total from this - ${decodedBody} and return as json , no additional data just the json`;
+
+        result = await getRelevantInfoGeminiApi(prompt);
+
+        console.log("Raw response from Gemini API: ", result);
+
+         result = result.replace(/```json|```/g, "").trim();
+
+        try {
+          resObj = JSON.parse(result);
+          arrayOfResults.push(resObj);
+          console.log(resObj, " --- resObj --- \n");
+        } catch (error) {
+          console.error("Failed to parse JSON:", error);
+        }
+      }
+
+      c++;
+    }
+  } catch (error) {
+    console.log(error, "error happened : ( !!! \n");
   }
-  return labels;
+
+  return arrayOfResults;
 };
 
-module.exports = { listLabels};
-
+module.exports = { listOrders };
