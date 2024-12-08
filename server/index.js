@@ -15,7 +15,6 @@ app.get("/getLabels", async (req, res) => {
   console.log(`/getLabels hit with a get request \n`);
   try {
     const orders = await listOrders();
-   
     res.status(200).json({ data: orders });
   } catch (err) {
     console.error("Error fetching labels:", err);

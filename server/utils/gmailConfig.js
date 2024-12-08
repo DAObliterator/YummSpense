@@ -77,7 +77,7 @@ const listOrders = async () => {
   const auth = await authorize();
   const gmail = google.gmail({ version: "v1", auth });
   let result;
-  
+
   let arrayOfResults = [];
   let decodedBody;
   try {
@@ -92,16 +92,39 @@ const listOrders = async () => {
 
     for (const m of arr) {
       let resObj;
-      if (c > 2) {
+      /*if (c > 2) {
         break;
-      }
+      }*/
 
       let message;
 
       let currentId = m.id;
 
       message = await gmail.users.messages.get({ userId: "me", id: currentId });
+      // Extract the headers
+      const headers = message.data.payload.headers;
 
+      // Find the "Date" header
+      const dateHeader = headers.find((header) => header.name === "Date");
+      let date = "";
+      let time = "";
+      if (dateHeader) {
+        console.log("Message sent on:", dateHeader.value);
+
+        const emailDate = new Date(dateHeader.value);
+
+        // Extract DD/MM/YY format
+        date = emailDate.toLocaleDateString("en-GB").replace(/\//g, "/"); // DD/MM/YY in the UK locale
+
+        // Extract time in AM/PM format
+        time = emailDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      } else {
+        console.log("Date header not found.");
+      }
       // Decode the body of the message
       const encodedBody =
         message.data.payload?.body?.data ||
@@ -117,12 +140,12 @@ const listOrders = async () => {
 
         result = await getRelevantInfoGeminiApi(prompt);
 
-        console.log("Raw response from Gemini API: ", result);
-
-         result = result.replace(/```json|```/g, "").trim();
-
+        result = result.replace(/```json|```/g, "").trim();
+        
         try {
           resObj = JSON.parse(result);
+          resObj.date = date;
+          resObj.time = time;
           arrayOfResults.push(resObj);
           console.log(resObj, " --- resObj --- \n");
         } catch (error) {
